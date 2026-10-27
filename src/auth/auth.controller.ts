@@ -19,10 +19,12 @@ export class AuthController {
 
   // Ghi refresh token vào cookie httpOnly - chỉ gửi kèm khi gọi các route /auth/*
   private setRefreshCookie(res: Response, refreshToken: string) {
+    const isProduction = this.config.get<string>('NODE_ENV') === 'production';
     res.cookie(REFRESH_COOKIE_NAME, refreshToken, {
       httpOnly: true,
-      sameSite: 'lax',
-      secure: this.config.get<string>('NODE_ENV') === 'production',
+      // Production: frontend (Vercel) và backend (Render) khác site nên cần 'none' + secure
+      sameSite: isProduction ? 'none' : 'lax',
+      secure: isProduction,
       path: '/auth',
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 ngày - khớp với JWT_REFRESH_EXPIRES_IN mặc định
     });
@@ -52,7 +54,12 @@ export class AuthController {
   async logout(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
     const refreshToken = req.cookies?.[REFRESH_COOKIE_NAME];
     await this.authService.logoutByRefreshToken(refreshToken);
-    res.clearCookie(REFRESH_COOKIE_NAME, { path: '/auth' });
+    const isProduction = this.config.get<string>('NODE_ENV') === 'production';
+    res.clearCookie(REFRESH_COOKIE_NAME, {
+      path: '/auth',
+      sameSite: isProduction ? 'none' : 'lax',
+      secure: isProduction,
+    });
     return { success: true };
   }
 
