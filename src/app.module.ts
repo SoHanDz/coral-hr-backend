@@ -24,6 +24,11 @@ import { UsersModule } from './users/users.module.js';
         username: config.get<string>('DB_USERNAME', 'root'),
         password: config.get<string>('DB_PASSWORD', '123456'),
         database: config.get<string>('DB_DATABASE', 'coral_hr'),
+        // Aiven (MySQL cloud) bắt buộc SSL; để DB_SSL=false khi chạy MySQL local
+        ssl:
+          config.get<string>('DB_SSL') === 'true'
+            ? { rejectUnauthorized: false }
+            : undefined,
         autoLoadEntities: true,
         // Tự động đồng bộ schema theo entity - chỉ dùng cho môi trường dev
         synchronize: true,
